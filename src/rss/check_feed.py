@@ -126,12 +126,92 @@ def mark_as_processed(slug: str, status: str = "success"):
     save_processed_state(state)
 
 
+def extract_date_from_slug(slug: str) -> str:
+    """slug에서 날짜를 추출합니다.
+
+    예: 26-01-16-chatgpt-ads -> 26-01-16
+    """
+    match = re.match(r"^(\d{2}-\d{2}-\d{2})", slug)
+    if match:
+        return match.group(1)
+    return ""
+
+
+def get_latest_processed_date(state: dict) -> str:
+    """처리된 이슈 중 가장 최신 날짜를 반환합니다.
+
+    Returns:
+        가장 최신 날짜 (예: "26-01-16"), 없으면 빈 문자열
+    """
+    if not state.get("processed"):
+        return ""
+
+    # success 상태인 항목들의 날짜만 추출
+    dates = []
+    for item in state["processed"]:
+        if item.get("status") == "success":
+            date = extract_date_from_slug(item["slug"])
+            if date:
+                dates.append(date)
+
+    if not dates:
+        return ""
+
+    # 날짜 정렬 (YY-MM-DD 형식이라 문자열 정렬로 충분)
+    return sorted(dates, reverse=True)[0]
+
+
+def is_news_article(item: dict) -> bool:
+    """뉴스 기사인지 확인합니다.
+
+    /issues/ 경로의 YY-MM-DD 형식 slug만 뉴스 기사로 취급합니다.
+    /projects/ 등 다른 경로는 제외합니다.
+    """
+    url = item.get("url", "")
+    slug = item.get("slug", "")
+
+    # /issues/ 경로만 허용
+    if "/issues/" not in url:
+        return False
+
+    # YY-MM-DD 형식으로 시작하는 slug만 허용
+    if not re.match(r"^\d{2}-\d{2}-\d{2}", slug):
+        return False
+
+    return True
+
+
 def get_unprocessed_issues(items: list[dict]) -> list[dict]:
-    """아직 처리되지 않은 이슈 목록을 반환합니다."""
+    """처리되지 않은 새 이슈 목록을 반환합니다.
+
+    중요: 가장 최근 처리된 글의 날짜 이후에 발행된 글만 반환합니다.
+    이전 날짜의 미처리 글은 무시됩니다.
+
+    기준: processed.json의 success 상태인 항목 중 가장 최신 날짜
+    """
     state = load_processed_state()
     processed_slugs = {item["slug"] for item in state["processed"]}
+    latest_date = get_latest_processed_date(state)
 
-    return [item for item in items if item["slug"] not in processed_slugs]
+    new_issues = []
+    for item in items:
+        # 뉴스 기사만 처리 (/issues/ 경로, YY-MM-DD slug)
+        if not is_news_article(item):
+            continue
+
+        # 이미 처리된 항목 제외
+        if item["slug"] in processed_slugs:
+            continue
+
+        # 최신 처리 날짜가 있으면, 그 이후 날짜만 포함
+        if latest_date:
+            item_date = extract_date_from_slug(item["slug"])
+            if item_date and item_date <= latest_date:
+                continue  # 이전 날짜는 건너뜀
+
+        new_issues.append(item)
+
+    return new_issues
 
 
 def check_for_new_issues(limit: int = None) -> list[dict]:
