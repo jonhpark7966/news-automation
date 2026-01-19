@@ -1,0 +1,8 @@
+{"alerts": [{
+  "timestamp": "2026-01-18 23:21:21",
+  "level": "info",
+  "title": "Test Alert",
+  "message": "This is a test alert message",
+  "context": "",
+  "acknowledged": false
+}]}

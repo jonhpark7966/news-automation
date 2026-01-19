@@ -1,101 +1,192 @@
 ---
-title: "ChatGPT, 무료 티어에 광고 테스트 시작 + 미국에 새로운 $8/월 Go 플랜 출시"
+title: "ChatGPT, 무료 티어에 광고 테스트 시작 + 새로운 $8/월 Go 플랜 출시"
 summary:
-  - "OpenAI가 ChatGPT Go 플랜($8/월)을 출시하고 무료 및 Go 티어에서 광고 테스트를 시작했다"
-  - "중국 연구진은 2026년 AI 병목이 훈련(training)이 아닌 추론(inference)에 있다고 분석했다"
-  - "Claude Opus 4.5가 SWE-bench에서 63.3% 해결률로 1위를 기록했다"
-  - "FLUX.2 [klein]이 4B 파라미터의 소비자 친화적 모델로 vLLM 지원과 함께 출시됐다"
-  - "Cursor Ultra 사용자들이 5분에 $2, 단일 오케스트레이터 실행에 월 할당량 20%를 소비했다고 보고했다"
+  - "OpenAI가 ChatGPT Go($8/월)를 출시"
+  - "무료/Go 티어에서 광고 테스트 시작"
+  - "Claude Opus 4.5가 SWE-bench 1위"
+  - "FLUX.2 [klein]이 4B 모델로 출시"
+  - "Cursor Ultra 비용 폭발 사례 보고"
 date: 2026-01-16
 originalUrl: "https://news.smol.ai/issues/26-01-16-chatgpt-ads/"
 hasHeadline: true
-headline: "ChatGPT, 무료 티어에 광고 테스트 시작 + 미국에 새로운 $8/월 Go 플랜 출시"
+headline: "ChatGPT, 프리미엄 + 광고 모델로 전환"
 tags:
   - OpenAI
   - ChatGPT
-  - 광고
-  - 추론
   - Claude
+  - FLUX
+  - Cursor
 isFeatured: true
 ---
 
 ## 헤드라인: ChatGPT, 프리미엄 + 광고 모델로 전환
 
-OpenAI가 두 가지 주요 수익화 전략을 발표했다. 새로운 ChatGPT Go 플랜($8/월)은 "10배 더 많은 메시지", 파일 업로드, 이미지 생성, 확장된 메모리, 그리고 무제한 GPT 5.2 인스턴트 접근을 제공한다. 동시에 OpenAI는 무료 및 Go 티어에서 광고 테스트를 시작하며, "광고는 절대로 응답에 영향을 주지 않으며 명확하게 표시된다"고 강조했다.
+> "소비자 수익화가 전부다."
 
-가격 복잡성에 대해 회의적인 반응이 있었으며, 한 댓글러는 점점 늘어나는 티어 혼란을 지적했다. Sam Altman은 메모리 시스템 개선과 함께 "매우 빠른 Codex 출시 예정"을 반복적으로 예고했다.
+AI 뉴스 2026/01/15-01/16. 12개 서브레딧, 544개 Twitter, 24개 Discord (205개 채널, 4966개 메시지) 분석. 예상 읽기 시간 절약: 430분.
 
 ---
 
 ## AI Twitter Recap
 
-### 수익화 & 제품 변화
+### OpenAI 제품 + 수익화 변화
 
-OpenAI의 이중 발표는 엇갈린 반응을 불러일으켰다. 일부는 불가피한 광고 확산에 체념했고, 다른 이들은 재정적 인센티브가 시간이 지남에 따라 모델 응답에 미묘하게 편향을 줄 수 있는지 의문을 제기했다.
+**ChatGPT Go + 광고 테스트:**
+- OpenAI가 [ChatGPT Go](https://openai.com/index/introducing-chatgpt-go/)를 월 $8에 발표했다. "10배 더 많은 메시지", 파일 업로드, 이미지 생성, 확장된 메모리/컨텍스트, 무제한 GPT 5.2 instant 접근을 제공한다.
+- 무료 및 Go 티어에서 광고 테스트가 시작된다. [OpenAI의 광고 접근법](https://openai.com/index/our-approach-to-advertising-and-expanding-access/)에 따르면 "광고가 응답에 영향을 미치지 않으며", 명확히 표시되고, "대화는 광고주로부터 비공개"라고 한다.
+- 인센티브 편향 가능성에 대한 커뮤니티의 회의적 반응이 있었으며, 이전 "광고는 최후의 수단" 입장이 언급되었다.
 
-### 에이전트 워크플로우 & 인프라
+**메모리 + 속도 개선:**
+- Sam Altman이 "새로운 ChatGPT 메모리 개선"과 함께 "매우 빠른 Codex 출시 예정"을 반복적으로 예고했다.
+- Codex CLI 생태계: Ollama를 통해 `codex --oss`로 오픈 웨이트 모델 사용 가능, 권장 컨텍스트 길이 32K 이상
 
-엔지니어들은 휴먼-인-더-루프(human-in-the-loop) 시스템이 신뢰성 승수 역할을 한다고 논의했다. 수동 감독을 추가하면 동일한 모델도 훨씬 더 신뢰할 수 있게 느껴진다는 것이다. Jerry Liu는 "정적 청킹(static chunking)은 죽었다"고 주장하며, 동적 확장을 갖춘 파일 기반 검색이 전통적인 RAG 파이프라인을 능가한다고 말했다.
+### 에이전트 툴링: 오케스트레이션 UX & 휴먼-인-더-루프
 
-오케스트레이션 도구들이 확산되었다: Anthropic의 Cowork이 주류로 진입했고, sled와 OpenWork 같은 소규모 제품들은 완전 로컬 컴퓨터 에이전트를 위한 Ollama 통합을 추가했다.
+**핵심 주제:**
+- 휴먼-인-더-루프(human-in-the-loop) 시스템이 동일한 기본 모델에도 신뢰성 승수 역할을 한다
+- "청킹(chunking)은 죽었다" / 파일 우선 검색: 에이전트가 파일을 열고 동적으로 검색할 수 있을 때 RAG가 여전히 유효하며, 취약한 청크/임베드 파이프라인을 피한다
+- 다수의 에이전트 오케스트레이터 제품 출시: Anthropic의 Cowork, SpecStory CLI, 로컬 Mac 에이전트용 네이티브 Ollama 통합을 갖춘 OpenWork
 
-### 하드웨어 & 추론(Inference)
+### 추론(Inference) + 시스템 엔지니어링
 
-중국 연구 요약은 추론(훈련이 아닌)이 2026년의 병목이라고 위치시켰다. Prefill 우세와 컨텍스트 캐싱이 표준이 되고 있으며, Prefill/Decode 분리는 신중한 스케줄링 재설계 없이는 활용도를 위협한다.
+**병목 현상 변화:** 인프라 분석에 따르면 토큰 생성이 이제 지배적이다; prefill/decode 분리는 재설계된 스케줄링 없이 활용도를 저해한다.
 
-Artificial Analysis는 SambaNova 하드웨어에서 DeepSeek R1을 벤치마크하여 NVIDIA 독점 서사에 도전하는 경쟁력 있는 처리량 지표를 보여주었다.
+**하드웨어 벤치마킹:** Artificial Analysis가 SambaNova SN40L에서 DeepSeek R1을 벤치마크했으며, 테스트된 NVIDIA 구성 대비 동시성에서 더 높은 처리량(~269 tok/s 단일 사용자)을 보여주었다.
 
-### 모델 & 검색
+**CUDA 최적화:** 엔지니어들은 더 깔끔한 타일링 추상화를 위한 CuTe 대수를 강조했다; NVIDIA의 cuTile 가이드라인은 단순화된 블록 레벨 코드로 cuBLAS GEMM에 가까운 성능을 달성할 수 있게 한다.
 
-- OpenBMB가 RTX 4090에서 0.15× 실시간으로 토큰화 없는 음성 복제를 위한 VoxCPM을 오픈소스화했다
-- TII가 100M 파라미터 미만 엣지 추론 작업을 위한 Falcon-H1-Tiny를 출시했다
-- 멀티-벡터 검색이 훨씬 큰 기준 모델과 경쟁하는 소형 모델의 스케일링 솔루션으로 주목받았다
+**데이터 센터 규모:** Epoch AI는 AI 데이터 센터를 총 ~30 GW 용량으로 추정, 뉴욕주 피크 사용량과 비슷하다.
+
+### 모델 & 연구 하이라이트
+
+**토큰화 없는 음성:** OpenBMB가 [VoxCPM](https://huggingface.co/OpenBMB/VoxCPM)을 오픈소스화했다. 연속 음성 생성과 RTX 4090에서 ~0.15 실시간 팩터로 실시간 스트리밍 음성 복제가 가능하다.
+
+**소형 모델:** TII가 엣지 시나리오를 위한 Falcon-H1-Tiny (<100M 파라미터)를 홍보했다; Ultralytics가 YOLO26 패밀리 (30개 모델, <50M 파라미터)를 출시했다.
+
+**번역:** TranslateGemma가 Malayalam을 포함한 다국어 지원으로 주목받았다; [Ollama](https://ollama.ai/)에서 특정 프롬프팅 형식으로 사용 가능하다.
+
+**검색 발전:** 멀티-벡터 검색이 소형 모델(32M 파라미터)로 8B 기준선과 경쟁할 수 있다고 주장; ColBERT/ColPali 스타일 접근법이 크로스-태스크에서 좋은 결과를 보인다.
+
+**정렬 프레임워크:** OpenBMB의 AIR이 선호도 데이터셋을 주석(Annotations)/지시(Instructions)/응답(Response) 쌍으로 분해하며, 14k 큐레이션된 쌍으로 평균 +5.3 벤치마크 향상을 보고했다.
 
 ### 생성형 미디어
 
-FLUX.2 [klein]이 첫날부터 vLLM을 지원하며 4B 파라미터 13GB 미만 소비자 모델로 출시되었다. Kling의 모션 제어 워크플로우는 빠른 캐릭터 교체와 전환 가능한 퍼포먼스 캡처를 가능하게 했다.
+**FLUX.2 [klein]:** Black Forest Labs의 모델이 첫날부터 [vLLM-Omni 지원](https://github.com/vllm-project/vllm)을 받았다. 소비자 친화적(<~13GB VRAM), 1초 미만 추론, Apache-2.0 라이선스 4B로 포지셔닝되었다.
+
+**비디오 순위:** Artificial Analysis에 따르면 LTX-2가 Video Arena에서 선두 오픈 웨이트 비디오 모델이다 (LTX-2 Community License, 상업적 수익 임계값 있음).
+
+**모션 제어 워크플로우:** Kling 모션 제어와 mocap 스타일 전송이 빠른 캐릭터 교체와 전이 가능한 퍼포먼스 캡처를 가능하게 한다.
 
 ---
 
 ## AI Reddit Recap
 
-### r/LocalLLama & r/localLLM
+### /r/LocalLlama + /r/localLLM
 
-2025년 12월 SWE-bench 리더보드는 Claude Opus 4.5가 63.3% 해결률로 선두를 차지했으며, GPT-5.2 xhigh가 61.5%를 기록했다. Gemini 3 Flash Preview는 더 작은 크기에도 불구하고 Pro 변형보다 뛰어난 성능을 보였다. GLM-4.7은 최고의 오픈소스 경쟁자로 순위에 올랐다.
+**새 모델 벤치마크:**
 
-하드웨어 토론은 A100 GPU 업그레이드, M-시리즈 Mac 비교, RTX 5070 Ti 생산 중단이 공급에 미치는 영향에 집중되었다. 사용자들은 llama.cpp와 vLLM 최적화, MoE 아키텍처를 활용하여 10년 된 시스템에서 120B 파라미터 모델을 실행했다고 보고했다.
+[SWE-rebench December 2025](https://swe-rebench.com/?insight=dec_2025)에서 Claude Opus 4.5가 63.3% 해결률로 선두, GPT-5.2 xhigh가 61.5%를 기록했다. Gemini 3 Flash Preview가 Pro를 능가했고, GLM-4.7이 최고의 오픈소스로 랭크되었다 (~473 activity comments)
 
-r/LocalLLM 30일 혁신 콘테스트는 추론/파인튜닝 프로젝트에 RTX PRO 6000과 클라우드 시간을 상품으로 제공했다.
+[Unsloth extended context RL](https://www.reddit.com/r/LocalLLaMA/comments/1qdna3t/7x_longer_context_reinforcement_learning_in/)이 7배 더 긴 컨텍스트(일부 경우 12배)를 달성했다. 24GB 카드에서 20K 컨텍스트를 정확도 손실 없이 지원하며, 192GB B200 GPU에서 380K에 도달한다 (~288 activity comments)
 
-### 비기술 서브레딧
+**하드웨어 업그레이드:**
 
-Claude Cowork이 Pro 구독자에게 제공되었지만 사용자들은 파일 정렬 중 사용량 제한에 빠르게 도달했다. Claude Flow v3는 75-80% 토큰 감소와 250% 구독 용량 증가를 약속했지만, 댓글러들은 버즈워드 가득한 마케팅을 사용한 입증되지 않은 성능 주장에 의문을 제기했다.
+[A100 40GB 설정](https://www.reddit.com/r/LocalLLaMA/comments/1qe0cxc/latest_upgradea100_40_gb/) 사용자가 게이밍 리그를 AI 중심 구성으로 전환했다; matatonic은 패시브 쿨링에 블로워 팬이나 AliExpress를 통한 액티브 쿨링이 필요하다고 언급했다 (~466 activity)
 
-Gemini 3 Pro는 컨텍스트 윈도우 감소와 함께 성능 저하가 보고되어 사용자들을 GPT 5.2 Thinking과 Opus 4.5 대안으로 이동시켰다.
+[M4/M5 Max 128GB vs DGX Spark](https://www.reddit.com/r/LocalLLM/comments/1qcmmvw/m4m5_max_128gb_vs_dgx_spark_or_gb10_oem/) 토론: MacBook이 추론(inference)에 우수한 메모리 대역폭을 제공; NVIDIA는 더 광범위한 파인튜닝/멀티모달 기능을 지원 (~188 activity)
+
+[RTX 5070 Ti 생산 중단](https://www.reddit.com/r/LocalLLaMA/comments/1qdh28f/rtx_5070_ti_and_rtx_5060_ti_16_gb_no_longer/) 메모리 공급 부족으로; 5060 Ti 16GB 가격이 MSRP 대비 ~$100 인상 [출처 비디오](https://m.youtube.com/watch?v=yteN21aJEvE) (~414 activity)
+
+**커뮤니티 혁신:**
+
+[r/LocalLLM 30일 콘테스트](https://www.reddit.com/r/LocalLLM/comments/1olbrch/mod_post_announcing_the_rlocalllm_30day/)가 오픈소스 추론/파인튜닝 프로젝트에 NVIDIA RTX PRO 6000과 8x H200 클라우드 시간을 제공 (~120 activity)
+
+[TiinyAI 120B 로컬 디바이스](https://www.reddit.com/r/LocalLLM/comments/1qcu498/small_ai_computer_runs_120b_models_locally_any/)가 80GB RAM, 30W 전력으로 모델을 실행한다; $1400 가격과 메모리 대역폭 제약에 대한 회의적 반응 (~107 activity)
+
+[커뮤니티 최적화 성과](https://www.reddit.com/r/LocalLLaMA/comments/1qee2de/i_fucking_love_this_community/)로 10년 된 PC에서 4GB VRAM으로 llama.cpp/vLLM과 MoE 아키텍처를 사용하여 14-13.5 t/s 달성 (~469 activity)
+
+[VRAM 가격 급등 밈](https://www.reddit.com/r/LocalLLaMA/comments/1qe2i88/my_story_of_underestimating_rlocalllamas_thirst/)으로 w6800 32GB 가격이 Reddit 포스트 후 $500에서 $1000+로 급등 기록 (~1291 activity)
+
+[16GB VRAM 모델 한계](https://www.reddit.com/r/LocalLLM/comments/1qcuyh2/what_is_the_biggest_local_llm_that_can_fit_in/): 실용적 최대치는 ~14B 파라미터; 더 큰 모델은 품질 저하를 감수한 공격적 양자화(quantization) 필요 (~155 activity)
+
+### Less Technical AI 서브레딧
+
+**Claude & Gemini 업데이트:**
+
+[Claude Cowork이 Pro에 제공](https://www.reddit.com/r/ClaudeAI/comments/1qeo736/official_claude_cowork_is_now_available_to_pro/) macOS 앱에서 연구 프리뷰로; 사용자들이 459개 파일 정렬에 97% 세션 한도 소비 보고 (~353 activity)
+
+[Claude Flow v3 재구축](https://www.reddit.com/r/ClaudeAI/comments/1qegsta/announcing_claude_flow_v3_a_full_rebuild_with_a/)이 TypeScript/WASM 재작성으로 75-80% 토큰 감소, 250% 용량 향상을 주장 [GitHub repo](https://github.com/ruvnet/claude-flow) (~291 activity); 버즈워드 가득한 메트릭에 대한 커뮤니티 회의적 반응
+
+[Gemini 3 Pro 성능 저하](https://www.reddit.com/r/GeminiAI/comments/1qemf0h/today_gemini_3_pro_became_unusable_to_me_as_a_pro/): 사용자들이 현저히 감소한 컨텍스트 윈도우, 증가한 환각, 관련 없는 코드 생성 보고; GPT 5.2 Thinking이 대안으로 제안됨 (~183 activity)
+
+**모델 릴리스:**
+
+[GLM-Image SOTA 멀티모달](https://www.reddit.com/r/MachineLearning/comments/1qeakhz/r_china_just_released_first_sota_multimodal_model/)이 Huawei Ascend 910 칩에서 훈련됨, H200 대비 60% 더 나은 컴퓨트 효율성(tokens/joule) 주장; 재훈련 없이 1024-2048 해상도 지원 (~49 activity)
+
+[Mamba-2 핵심 알고리즘 재작성](https://www.reddit.com/r/MachineLearning/comments/1qehwlu/d_why_mamba_rewrote_its_core_algorithm_and/): 병렬 스캔(10-20% Tensor Core 활용)에서 블록-대각 GEMM(60-70% 활용)으로 전환; Microsoft가 RetNet을 버리고 dense Transformer로 [Substack 에세이](https://open.substack.com/pub/lambpetros/p/the-transformer-attractor) (~131 activity)
+
+[ICASSP 2026 수락 결과](https://www.reddit.com/r/MachineLearning/comments/1qeips6/d_icassp_2026_results/): [초대 링크](https://cmsworkshops.com/ICASSP2026/author_invitation_request.php)로 바르셀로나 2026년 5월 3-8일 조기 접근 (~73 activity)
+
+**사용자 경험:**
+
+[ADHD 두뇌를 위한 AI 코딩 도구](https://www.reddit.com/r/ClaudeCode/comments/1qeb6od/why_ai_coding_tools_accidentally_feel_perfect_for/): 부주의형 ADHD 보상 전략과 패턴 인식 정렬; 외부화된 작업 메모리가 활성화 비용 감소 (~238 activity)
+
+[Opus 성능 저하](https://www.reddit.com/r/ClaudeCode/comments/1qeb8x4/whats_going_on_with_opus/): 프록시 express 서버를 통한 라우팅 문제, 엔드포인트 환각; 사용자들이 Codex 같은 대안 탐색 (~220 activity)
 
 ---
 
 ## AI Discord Recap
 
-### 청구 공포 스토리
+### 고수준 요약
 
-Cursor Ultra 사용자들은 약 5분에 $2를 소비하고 단일 오케스트레이터 실행에 월 할당량의 20%를 소비했다고 보고했다. 한 Qoder 사용자는 월 $400 지출을 "도박이나 헤로인"에 비유했다. Gemini CLI 워크플로우는 하루 1000만 토큰(약 $120/일 예상)에 도달하여 토큰 집약적 워크플로우의 "조용한 소비자" 문제를 보여주었다.
+**OpenAI 수익화 & 벤치마킹:**
+- ChatGPT Go ($8/월)가 10배 메시지, 파일 업로드, 이미지 생성과 함께 출시; 광고 테스트가 "명확히 표시" 약속과 함께 시작
+- METR 벤치마크 분석에 따르면 인터페이스(API vs 웹 앱)가 시간 수평선 측정에 1.75-9.5배 영향을 미침, [Simon Smith 포스트](https://xcancel.com/_simonsmith/status/2011928926864454133) 참조
 
-### 모델 & 도구 업데이트
+**에이전틱 IDE 비용:**
+- Cursor Ultra 보고: 단일 오케스트레이터 실행에 사용량의 20% 소비; ~5분에 $2 지출
+- Qoder가 ~$400/월 지출에 레이트 리밋 도달; 사용자들이 비용 절감을 위해 Claude Code와 비교
+- Gemini CLI가 하루 10,000,000 토큰 소비 (~$120/일, ~$4000/월 예상)
+- Manus 플랫폼에서 결제/크레딧 시스템 장애; 더 나은 미터링/할당량 UX 요청
 
-- Translate Gemma가 다국어 지원과 함께 Hugging Face에 출시됨
-- K2 Turbo가 약 73 tps에 도달, 표준 K2보다 약 2.6배 빠름
-- Claude가 단일 API 요청에서 병렬 도구 사용을 시연하여 오케스트레이션 오버헤드 감소
-- Hawk Ultra가 단일 프롬프트에서 9,500줄 이상의 코드 출력을 주장
+**모델 출시 & 도구 사용:**
+- [TranslateGemma](https://huggingface.co/collections/google/translategemma)가 HuggingFace에서 다국어 지원
+- Moonshot K2 Turbo: 표준 K2 ~28 tps 대비 ~73 tps; 새로운 Slides + Vision 기능
+- Claude 멀티-툴 병렬 실행 [API 문서](https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use#controlling-claudes-output) 참조
+- [MovementLabs.AI](https://movementlabs.ai/)의 Hawk Ultra가 단일 프롬프트로 9.5k+ 줄 출력 주장; "Opus 킬러" 포지셔닝
 
-### 시스템 현실
+**평가 & 벤치마크:**
+- MMLU-Pro 패치 [lm-evaluation-harness PR #3500](https://github.com/EleutherAI/lm-evaluation-harness/pull/3500)
+- OpenCompass가 잘 포맷된 JSON 출력; L4 vs 3060 노트북 성능 비교
+- LMArena PDF 채팅 실험적 지원 (모델 커버리지 불균형)
+- 이미지 리더보드 업데이트: flux.2-klein-9B가 텍스트-투-이미지 #15
 
-Runpod GPU 언더볼팅이 조용한 성능 불일치를 야기했다. PCIe Gen3×1 슬롯은 RTX 3090 처리량을 약 25% 감소시켰다. GPU MODE 엔지니어들은 RDNA3 하드웨어에서 buffer_inv sc1 명령을 사용하여 L2 캐시 일관성을 디버깅했다—"일관성이 없으면 모든 것이 빠르다."
+**GPU & 시스템 현실:**
+- Runpod GPU 언더볼팅 공지 없이; A100 vs H100 성능 불일치
+- 벤치마크 간 `time.sleep()`이 GPU 다운클럭킹 유발; sleep 제거로 클럭 유지
+- PCIe Gen3x1이 3090 처리량을 ~25% 감소 (~120에서 ~90 t/s로)
+- 멀티-L2 gfx942 설정에서 L2 무효화를 위해 `buffer_inv sc1` 사용하는 ROCm 캐시 일관성
 
-### 탈옥(Jailbreaking) 커뮤니티
+### BASI 탈옥 Discord
 
-BASI Discord 멤버들은 Gemini 탈옥이 빠르게 패치되지만 제한 없는 NSFW 콘텐츠에 가장 쉽다고 언급했다. Sonnet 4.5는 멀티턴 다이어그램 내러티브를 통해 잠금 해제되었고; Llama 3 프롬프트 역전은 거부를 재구성하여 준수를 강제했다.
+- **Gemini 탈옥**이 빠르게 패치되지만 제한 없는 NSFW에 가장 쉬운 옵션으로 남음
+- **Grok**이 필터링 없는 콘텐츠 생성으로 주목; 잠재적 밴/높은 수요 상관관계
+- **Sonnet 4.5 다이어그램 내러티브** 멀티턴 언락: [공유 프롬프트](https://cdn.discordapp.com/attachments/1461676810122166346/1461678022389137634/breakout-multiturn-sonnet-4-5-meth-51n5337.txt)
+- **Llama 3 거부 역전**이 프롬프트 엔지니어링으로 우회 ("I can" 준수 강제)
+- **Cold Link & OCR Injection** 우회 방법; [디팽 도구](https://blackheathpoint.com/tools/defang-url.html)
 
----
+### Unsloth AI Discord
 
-**핵심 요약:** 2026년 인프라 논의는 기업들이 무료 티어를 수익화하는 동안 엔지니어들이 하드웨어 현실과 청구 불확실성을 최적화하면서 추론 최적화, 소형 모델 스케일링, 비용 가시성을 강조한다.
+- [TranslateGemma](https://huggingface.co/collections/google/translategemma) 출시 공지
+- Windows 11 호환성 확인; [설치 가이드](https://unsloth.ai/docs/get-started/install/windows-installation)
+- JSON 출력으로 OpenCompass 평가; L4 vs 3060 노트북 성능
+- Runpod A100 언더볼팅 이슈; LM 튜닝에 A100이 비용 효율적
+- **Shadows-Gemma-1B** topk 20 logprobs 접근법으로 디스틸레이션
+
+### Cursor Community Discord
+
+- Qoder 비용 급증: $400/월 지출, 사용자가 "도박이나 헤로인"에 비유; Claude Code가 제안됨
+- Cursor PC 충돌 보고; 오케스트레이터 에이전트 동작 vs 채팅박스
+- **Gemini Pro 3**가 미적 웹사이트에 추천; Tailwind/Framer Motion 제안 [Reddit 스레드](https://www.reddit.com/r/vibecoding/comments/1oy2f95/how_do_i_make_an_aigenerated_frontend_not_look/)
+- Ultra 플랜 가격 우려; $400 보장과 더 작은 Opus 보너스
+- Nightly 빌드 서브에이전트 제어 이슈; 서브에이전트로 더 작은 모델 사용 희망

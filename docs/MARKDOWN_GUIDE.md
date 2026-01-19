@@ -36,13 +36,13 @@ summary:
 date: 2026-01-16
 originalUrl: "https://news.smol.ai/issues/26-01-16-slug/"
 hasHeadline: true
+headline: "summary 중 가장 관심 끌 소식"
 ---
 ```
 
 ### 선택 필드
 
 ```yaml
-headline: "헤드라인 제목"   # hasHeadline이 true일 때만
 tags:
   - OpenAI
   - Claude
@@ -57,8 +57,8 @@ isFeatured: false          # 기본값: false
 | `summary` | string[] | O | **정확히 5줄** - 핵심 요약 |
 | `date` | date | O | 뉴스 날짜 (YYYY-MM-DD) |
 | `originalUrl` | string | O | smol.ai 원문 URL |
-| `hasHeadline` | boolean | O | 헤드라인 유무 |
-| `headline` | string | X | 헤드라인 제목 (hasHeadline=true일 때) |
+| `hasHeadline` | boolean | O | 원문에 명시적 헤드라인 유무 |
+| `headline` | string | O | 요약 중 가장 관심 끌 소식(항상) |
 | `tags` | string[] | X | 태그 목록 |
 | `isFeatured` | boolean | X | 주요 뉴스 여부 |
 
@@ -111,13 +111,9 @@ isFeatured: false          # 기본값: false
 (frontmatter)
 ---
 
-## 주요 소식
+## 헤드라인: [선택한 헤드라인]
 
-### 소제목 1
-내용...
-
-### 소제목 2
-내용...
+해당 뉴스 상세 내용...
 
 ---
 
