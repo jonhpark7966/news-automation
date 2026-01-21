@@ -68,6 +68,7 @@ cat "$content_file" >> "$temp_prompt"
 
 # Codex 실행 (마지막 메시지를 파일로 저장)
 if ! "$CODEX_BIN" exec --full-auto \
+    --skip-git-repo-check \
     --color never \
     -m "$CODEX_MODEL" \
     -c "reasoning_effort=\"$CODEX_REASONING_EFFORT\"" \
