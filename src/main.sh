@@ -21,6 +21,50 @@ CHECK_ONLY=false
 TARGET_URL=""
 SKIP_REVIEW=false
 
+# 파이프라인 경고/실패 추적 (PR 본문에 표시용)
+PIPELINE_WARNINGS=()
+
+# final.md 검증 함수
+validate_final_markdown() {
+    local file="$1"
+    local errors=()
+
+    if [[ ! -f "$file" ]]; then
+        errors+=("파일이 존재하지 않음")
+    else
+        local content=$(cat "$file")
+
+        # Frontmatter 확인
+        if ! echo "$content" | head -5 | grep -q "^---"; then
+            errors+=("Frontmatter 없음")
+        fi
+
+        # summary 필드 확인
+        if ! echo "$content" | grep -q "^summary:"; then
+            errors+=("summary 필드 없음")
+        fi
+
+        # 최소 길이 확인
+        local line_count=$(echo "$content" | wc -l)
+        if [[ $line_count -lt 50 ]]; then
+            errors+=("콘텐츠가 너무 짧음 (${line_count}줄)")
+        fi
+
+        # 로컬 경로 참조 감지
+        if echo "$content" | grep -qE 'workspace/.*\.md|translated\.md|retranslated\.md'; then
+            errors+=("로컬 파일 경로 참조 감지")
+        fi
+    fi
+
+    if [[ ${#errors[@]} -gt 0 ]]; then
+        for err in "${errors[@]}"; do
+            echo "$err"
+        done
+        return 1
+    fi
+    return 0
+}
+
 # 인자 파싱
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -165,6 +209,7 @@ if [[ "$SKIP_REVIEW" != "true" ]]; then
         log_success "Review passed!"
     else
         log_warn "Review failed. Attempting re-translation..."
+        PIPELINE_WARNINGS+=("리뷰 실패: 재번역 시도")
 
         # 피드백을 포함하여 재번역 시도
         FEEDBACK_FILE="$WORK_DIR/feedback.txt"
@@ -179,22 +224,39 @@ if [[ "$SKIP_REVIEW" != "true" ]]; then
         echo "## 이전 번역 피드백 (이 문제를 수정해주세요):" >> "$WORK_DIR/original_with_feedback.md"
         echo "$review_result" >> "$WORK_DIR/original_with_feedback.md"
 
-        "$SCRIPT_DIR/translate/translate.sh" "$WORK_DIR/original_with_feedback.md" "$HAS_HEADLINE" "$RETRANSLATED_FILE" || {
-            log_error "Re-translation failed"
-            python3 "$SCRIPT_DIR/state/state_manager.py" mark "$SLUG" --status failed --error "Re-translation failed"
-            exit 1
-        }
+        retranslate_exit_code=0
+        "$SCRIPT_DIR/translate/translate.sh" "$WORK_DIR/original_with_feedback.md" "$HAS_HEADLINE" "$RETRANSLATED_FILE" || retranslate_exit_code=$?
 
-        # 재검토
-        review_result2=$("$SCRIPT_DIR/review/review.sh" "$ORIGINAL_FILE" "$RETRANSLATED_FILE" 2>&1) || true
-
-        if echo "$review_result2" | grep -q "^PASS"; then
-            log_success "Re-translation passed review!"
-            TRANSLATED_FILE="$RETRANSLATED_FILE"
+        if [[ $retranslate_exit_code -ne 0 ]]; then
+            log_warn "Re-translation failed (exit code: $retranslate_exit_code). Using original translation."
+            PIPELINE_WARNINGS+=("재번역 실패: 원본 번역 사용")
+            # 재번역 실패 시 원본 번역 유지 (TRANSLATED_FILE 변경 없음)
         else
-            log_warn "Re-translation also failed review. Proceeding with best effort."
-            # 두 번째 번역이 더 나을 수 있으므로 사용
-            TRANSLATED_FILE="$RETRANSLATED_FILE"
+            # 재번역 성공 시 검토
+            review_result2=$("$SCRIPT_DIR/review/review.sh" "$ORIGINAL_FILE" "$RETRANSLATED_FILE" 2>&1) || true
+
+            if echo "$review_result2" | grep -q "^PASS"; then
+                log_success "Re-translation passed review!"
+                TRANSLATED_FILE="$RETRANSLATED_FILE"
+            else
+                log_warn "Re-translation also failed review. Comparing translations..."
+                PIPELINE_WARNINGS+=("재번역도 리뷰 실패")
+
+                # 재번역이 유효한지 검증
+                retrans_validation=$(validate_final_markdown "$RETRANSLATED_FILE" 2>&1) || true
+                orig_validation=$(validate_final_markdown "$TRANSLATED_FILE" 2>&1) || true
+
+                if [[ -z "$retrans_validation" ]]; then
+                    log_info "Re-translation is valid, using it."
+                    TRANSLATED_FILE="$RETRANSLATED_FILE"
+                elif [[ -z "$orig_validation" ]]; then
+                    log_info "Original translation is valid, keeping it."
+                    PIPELINE_WARNINGS+=("원본 번역 사용 (재번역 검증 실패)")
+                else
+                    log_warn "Both translations have issues. Using original."
+                    PIPELINE_WARNINGS+=("원본 번역 사용 (둘 다 검증 실패)")
+                fi
+            fi
         fi
     fi
 
@@ -214,6 +276,26 @@ python3 "$SCRIPT_DIR/generate/generate_markdown.py" "$TRANSLATED_FILE" \
     python3 "$SCRIPT_DIR/state/state_manager.py" mark "$SLUG" --status failed --error "Markdown generation failed"
     exit 1
 }
+
+# final.md 검증
+final_validation=$(validate_final_markdown "$FINAL_FILE" 2>&1) || true
+if [[ -n "$final_validation" ]]; then
+    log_warn "Final markdown validation failed: $final_validation"
+    PIPELINE_WARNINGS+=("최종 마크다운 검증 실패: $final_validation")
+
+    # 원본 translated.md가 유효하면 그걸로 대체
+    ORIGINAL_TRANSLATED="$WORK_DIR/translated.md"
+    orig_validation=$(validate_final_markdown "$ORIGINAL_TRANSLATED" 2>&1) || true
+
+    if [[ -z "$orig_validation" ]]; then
+        log_info "Using original translated.md as final.md"
+        cp "$ORIGINAL_TRANSLATED" "$FINAL_FILE"
+        PIPELINE_WARNINGS+=("원본 번역으로 대체함")
+    else
+        log_warn "Original translation also invalid. Proceeding with best effort."
+        PIPELINE_WARNINGS+=("원본도 검증 실패 - 최선의 결과로 진행")
+    fi
+fi
 
 log_step_done "최종 마크다운 생성"
 
@@ -241,6 +323,15 @@ if [[ "$DRY_RUN" == "true" ]]; then
     python3 "$SCRIPT_DIR/state/state_manager.py" mark "$SLUG" --status success
 else
     log_step "Step 6: PR 생성"
+
+    # 경고 정보를 환경변수로 전달
+    WARNINGS_FILE="$WORK_DIR/pipeline_warnings.txt"
+    if [[ ${#PIPELINE_WARNINGS[@]} -gt 0 ]]; then
+        printf '%s\n' "${PIPELINE_WARNINGS[@]}" > "$WARNINGS_FILE"
+        log_warn "Pipeline had ${#PIPELINE_WARNINGS[@]} warning(s)"
+    else
+        rm -f "$WARNINGS_FILE"
+    fi
 
     pr_output=$("$SCRIPT_DIR/publish/create_pr.sh" "$SLUG" "$WORK_DIR" 2>&1) || {
         log_error "PR creation failed"

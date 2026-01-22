@@ -104,6 +104,22 @@ log_info "Creating pull request..."
 # frontmatter에서 summary 추출
 SUMMARY=$(grep -A 5 "^summary:" "$FINAL_FILE" | grep "^  - " | sed 's/^  - "//;s/"$//' | head -3)
 
+# 파이프라인 경고 확인
+WARNINGS_FILE="$WORK_DIR/pipeline_warnings.txt"
+WARNINGS_SECTION=""
+if [[ -f "$WARNINGS_FILE" ]]; then
+    WARNINGS_CONTENT=$(cat "$WARNINGS_FILE")
+    WARNINGS_SECTION="
+## ⚠️ Pipeline Warnings
+
+파이프라인 실행 중 다음 문제가 발생했습니다:
+
+$(echo "$WARNINGS_CONTENT" | while read line; do echo "- $line"; done)
+
+**수동 검토 권장**
+"
+fi
+
 PR_URL=$(gh pr create \
     --title "feat(ainews): $TITLE" \
     --body "$(cat <<EOF
@@ -113,7 +129,7 @@ PR_URL=$(gh pr create \
 
 ### 주요 내용
 $(echo "$SUMMARY" | while read line; do echo "- $line"; done)
-
+${WARNINGS_SECTION}
 ## Pipeline Info
 
 - **Translation**: Codex CLI (gpt-5.2, reasoning: high)

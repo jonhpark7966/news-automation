@@ -23,6 +23,45 @@ content_file="$1"
 has_headline="$2"
 output_file="${3:-}"
 
+# 번역 출력 검증 함수
+# 반환값: 0=성공, 1=실패
+# 실패 시 stderr에 오류 메시지 출력
+validate_translation_output() {
+    local content="$1"
+    local errors=()
+
+    # 1. Frontmatter 존재 확인
+    if ! echo "$content" | head -5 | grep -q "^---"; then
+        errors+=("Frontmatter(---) 없음")
+    fi
+
+    # 2. summary 필드 확인 (필수)
+    if ! echo "$content" | grep -q "^summary:"; then
+        errors+=("summary 필드 없음")
+    fi
+
+    # 3. 최소 길이 확인 (50줄 미만이면 불완전)
+    local line_count=$(echo "$content" | wc -l)
+    if [[ $line_count -lt 50 ]]; then
+        errors+=("콘텐츠가 너무 짧음 (${line_count}줄, 최소 50줄 필요)")
+    fi
+
+    # 4. 로컬 경로 참조 패턴 감지 (이번 버그의 직접 원인)
+    if echo "$content" | grep -qE 'workspace/.*\.md|translated\.md|retranslated\.md|final\.md'; then
+        errors+=("로컬 파일 경로 참조 감지 - 실제 번역이 아님")
+    fi
+
+    # 오류가 있으면 실패
+    if [[ ${#errors[@]} -gt 0 ]]; then
+        echo "TRANSLATION_VALIDATION_FAILED" >&2
+        for err in "${errors[@]}"; do
+            echo "  - $err" >&2
+        done
+        return 1
+    fi
+    return 0
+}
+
 # 파일 존재 확인
 if [[ ! -f "$content_file" ]]; then
     log_error "Content file not found: $content_file"
@@ -101,6 +140,13 @@ if lines and lines[0].lstrip().startswith("```") and lines[-1].strip() == "```":
 sys.stdout.write(text + ("\n" if text and not text.endswith("\n") else ""))
 PY
 )
+fi
+
+# 출력 검증
+if ! validate_translation_output "$extracted_content"; then
+    log_error "번역 출력 검증 실패"
+    # exit 2 = 검증 실패 (exit 1 = Codex 실행 실패와 구분)
+    exit 2
 fi
 
 # 출력
