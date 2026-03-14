@@ -20,16 +20,17 @@ export PROCESSED_FILE="$DATA_DIR/processed.json"
 export WEB_REPO_PATH="${WEB_REPO_PATH:-/home/jonhpark/workspace/web}"
 export AINEWS_CONTENT_PATH="$WEB_REPO_PATH/src/content/ainews"
 
-# RSS 피드 URL
-export RSS_FEED_URL="https://news.smol.ai/rss.xml"
+# GitHub 소스 URL (RSS 피드 대신 GitHub 레포지토리에서 직접 가져옴)
+export GITHUB_SOURCE_REPO="smol-ai/ainews-web-2025"
+export GITHUB_ISSUES_PATH="src/content/issues"
 
 # 모델 설정
-export CODEX_MODEL="gpt-5.2"
-export CODEX_REASONING_EFFORT="high"
+export CODEX_MODEL="gpt-5.4"
+export CODEX_REASONING_EFFORT="medium"
 export CLAUDE_MODEL="opus"
 
 # CLI 경로
-export CODEX_BIN="${CODEX_BIN:-/home/jonhpark/.npm-global/bin/codex}"
+export CODEX_BIN="${CODEX_BIN:-$(command -v codex 2>/dev/null || echo /home/jonhpark/.npm-global/bin/codex)}"
 export CLAUDE_BIN="${CLAUDE_BIN:-/home/jonhpark/.local/bin/claude}"
 
 # 재시도 설정

@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """
-fetch_page.py - 웹 크롤러
-smol.ai 뉴스 페이지를 크롤링하여 마크다운으로 변환합니다.
+fetch_page.py - GitHub 마크다운 페처
+GitHub 레포지토리에서 마크다운 파일을 가져와 처리합니다.
 
-smol.ai HTML 구조:
-- 콘텐츠: <article class="content-area">...</article>
-- 링크: <a href="https://...">text</a>
+기존 smol.ai HTML 크롤링에서 GitHub raw 마크다운 직접 가져오기로 변경되었습니다.
 """
 
 import sys
@@ -15,7 +13,6 @@ import argparse
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
-from html.parser import HTMLParser
 from typing import Optional
 from datetime import datetime
 
@@ -28,173 +25,16 @@ MIN_CONTENT_LENGTH = 1000  # 최소 콘텐츠 길이 (문자)
 MIN_LINK_COUNT = 5  # 최소 링크 개수
 
 
-class SmolAIContentParser(HTMLParser):
-    """smol.ai content-area를 파싱하는 HTML 파서"""
-
-    # HTML void elements (no end tag). These must not affect depth tracking.
-    _VOID_ELEMENTS = {
-        "area",
-        "base",
-        "br",
-        "col",
-        "embed",
-        "hr",
-        "img",
-        "input",
-        "link",
-        "meta",
-        "param",
-        "source",
-        "track",
-        "wbr",
-    }
-
-    def __init__(self):
-        super().__init__()
-        self.in_content_area = False
-        self.content_depth = 0
-        self.content_parts = []
-        self.current_link_href = None
-        self.current_link_text = []
-        self.in_link = False
-        self.tag_stack = []
-        self.links_found = []
-        self.title = ""
-        self.in_title_tag = False
-
-    def handle_starttag(self, tag, attrs):
-        attrs_dict = dict(attrs)
-
-        # title 태그 감지
-        if tag == "title":
-            self.in_title_tag = True
-            return
-
-        # content-area 시작 감지
-        if tag == "article" and "content-area" in attrs_dict.get("class", ""):
-            self.in_content_area = True
-            self.content_depth = 1
-            return
-
-        if not self.in_content_area:
-            return
-
-        # depth 추적 (void element는 endtag가 없으므로 제외)
-        if tag not in self._VOID_ELEMENTS:
-            self.content_depth += 1
-            self.tag_stack.append(tag)
-
-        # 마크다운 변환
-        if tag == "h1":
-            self.content_parts.append("\n\n# ")
-        elif tag == "h2":
-            self.content_parts.append("\n\n## ")
-        elif tag == "h3":
-            self.content_parts.append("\n\n### ")
-        elif tag == "h4":
-            self.content_parts.append("\n\n#### ")
-        elif tag == "p":
-            self.content_parts.append("\n\n")
-        elif tag == "ul":
-            self.content_parts.append("\n")
-        elif tag == "ol":
-            self.content_parts.append("\n")
-        elif tag == "li":
-            self.content_parts.append("\n- ")
-        elif tag == "strong" or tag == "b":
-            self.content_parts.append("**")
-        elif tag == "em" or tag == "i":
-            self.content_parts.append("*")
-        elif tag == "code":
-            self.content_parts.append("`")
-        elif tag == "pre":
-            self.content_parts.append("\n```\n")
-        elif tag == "hr":
-            self.content_parts.append("\n\n---\n\n")
-        elif tag == "br":
-            self.content_parts.append("\n")
-        elif tag == "blockquote":
-            self.content_parts.append("\n\n> ")
-        elif tag == "a":
-            href = attrs_dict.get("href", "")
-            if href and not href.startswith("#") and not href.startswith("/"):
-                self.in_link = True
-                self.current_link_href = href
-                self.current_link_text = []
-                self.links_found.append(href)
-            else:
-                # 내부 링크는 텍스트만 추출
-                pass
-        elif tag == "img":
-            alt = attrs_dict.get("alt", "image")
-            src = attrs_dict.get("src", "")
-            if src:
-                self.content_parts.append(f"![{alt}]({src})")
-
-    def handle_endtag(self, tag):
-        if tag == "title":
-            self.in_title_tag = False
-            return
-
-        if not self.in_content_area:
-            return
-
-        # content-area 종료 감지
-        if tag == "article":
-            self.content_depth -= 1
-            if self.content_depth <= 0:
-                self.in_content_area = False
-            return
-
-        self.content_depth -= 1
-        if self.tag_stack:
-            self.tag_stack.pop()
-
-        # 마크다운 변환
-        if tag == "strong" or tag == "b":
-            self.content_parts.append("**")
-        elif tag == "em" or tag == "i":
-            self.content_parts.append("*")
-        elif tag == "code":
-            self.content_parts.append("`")
-        elif tag == "pre":
-            self.content_parts.append("\n```\n")
-        elif tag == "a" and self.in_link:
-            link_text = "".join(self.current_link_text).strip()
-            if link_text and self.current_link_href:
-                self.content_parts.append(f"[{link_text}]({self.current_link_href})")
-            self.in_link = False
-            self.current_link_href = None
-            self.current_link_text = []
-
-    def handle_data(self, data):
-        if self.in_title_tag:
-            self.title += data
-            return
-
-        if not self.in_content_area:
-            return
-
-        if self.in_link:
-            self.current_link_text.append(data)
-        else:
-            self.content_parts.append(data)
-
-    def handle_startendtag(self, tag, attrs):
-        # Self-closing tags like <br/> or <img/> are common; treat as starttag only.
-        self.handle_starttag(tag, attrs)
-
-
-def fetch_page(url: str) -> str:
-    """웹 페이지를 가져옵니다."""
+def fetch_raw_markdown(url: str) -> str:
+    """GitHub raw URL에서 마크다운 파일을 가져옵니다."""
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; smol-ai-news-automation/1.0)",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "smol-ai-news-automation/1.0",
+        "Accept": "text/plain",
     }
     request = Request(url, headers=headers)
 
     try:
-        with urlopen(request, timeout=30) as response:
+        with urlopen(request, timeout=60) as response:
             return response.read().decode("utf-8")
     except HTTPError as e:
         print(f"HTTP Error: {e.code} - {e.reason}", file=sys.stderr)
@@ -204,23 +44,60 @@ def fetch_page(url: str) -> str:
         sys.exit(1)
 
 
-def html_to_markdown(html_content: str) -> tuple[str, str, list[str]]:
-    """HTML을 마크다운으로 변환합니다.
+def strip_frontmatter(raw_content: str) -> tuple[str, dict]:
+    """YAML frontmatter를 분리하여 본문과 메타데이터를 반환합니다.
+
+    Returns:
+        (body, frontmatter_dict) 튜플
+    """
+    frontmatter = {}
+
+    if not raw_content.startswith("---"):
+        return raw_content, frontmatter
+
+    # frontmatter 끝 찾기
+    end_match = re.search(r"\n---\s*\n", raw_content[3:])
+    if not end_match:
+        return raw_content, frontmatter
+
+    fm_text = raw_content[4:end_match.start() + 3]  # --- 이후부터
+    body = raw_content[end_match.end() + 3:]  # --- 이후 본문
+
+    # 간단한 YAML 파싱 (외부 라이브러리 없이)
+    for line in fm_text.strip().split("\n"):
+        # 리스트 항목 (- value) 건너뛰기
+        if line.strip().startswith("- "):
+            continue
+        match = re.match(r"^(\w+):\s*(.+)$", line)
+        if match:
+            key = match.group(1)
+            value = match.group(2).strip().strip("'\"")
+            frontmatter[key] = value
+
+    return body, frontmatter
+
+
+def process_markdown(raw_content: str) -> tuple[str, str, list[str]]:
+    """마크다운 콘텐츠를 처리합니다.
 
     Returns:
         (content, title, links) 튜플
     """
-    parser = SmolAIContentParser()
-    parser.feed(html_content)
+    body, frontmatter = strip_frontmatter(raw_content)
 
-    content = "".join(parser.content_parts)
+    # 타이틀 추출 (frontmatter > 첫 번째 # 헤딩)
+    title = frontmatter.get("title", "")
+    if not title or title == "FILL TITLE IN HERE":
+        # 본문에서 첫 번째 헤딩 추출
+        heading_match = re.search(r"^#\s+(.+)$", body, re.MULTILINE)
+        if heading_match:
+            title = heading_match.group(1).strip()
 
     # 정리: 연속된 빈 줄 제거, 앞뒤 공백 제거
-    content = re.sub(r"\n{3,}", "\n\n", content)
+    content = re.sub(r"\n{3,}", "\n\n", body)
     content = content.strip()
 
     # 너무 긴 Discord 상세 섹션(사이트용)을 잘라내고 핵심 뉴스레터만 유지
-    # (예: "# Discord: High level Discord summaries" 이하 제거)
     content = re.split(
         r"^# Discord: High level Discord summaries\s*$",
         content,
@@ -230,33 +107,42 @@ def html_to_markdown(html_content: str) -> tuple[str, str, list[str]]:
     # 다음 섹션을 위해 붙은 마지막 구분선이 남아있으면 제거
     content = re.sub(r"(\n---\s*)+\Z", "\n", content).strip()
 
-    # title에서 " | AINews" 제거
-    title = parser.title.replace(" | AINews", "").strip()
-
-    # 최종 콘텐츠 기준으로 링크 재추출 (trim된 섹션 링크 제외)
+    # 링크 추출
     links = re.findall(r"\[[^\]]*?\]\(([^)]+)\)", content)
 
     return content, title, links
 
 
 def extract_metadata_from_url(url: str) -> dict:
-    """URL에서 메타데이터를 추출합니다."""
-    # URL에서 날짜 추출: /issues/26-01-14-not-much/
-    date_match = re.search(r"/issues/(\d{2})-(\d{2})-(\d{2})-", url)
+    """URL에서 메타데이터를 추출합니다.
+
+    GitHub raw URL 형식: .../src/content/issues/26-03-04-not-much.md
+    """
+    # 파일명에서 slug 추출
+    filename = url.rstrip("/").split("/")[-1]
+    slug = filename.replace(".md", "") if filename.endswith(".md") else filename
+
+    # slug에서 날짜 추출
+    # YY-MM-DD 형식
+    date_match = re.match(r"^(\d{2})-(\d{2})-(\d{2})-", slug)
     if date_match:
         yy, mm, dd = date_match.groups()
         date = f"20{yy}-{mm}-{dd}"
     else:
-        date = datetime.now().strftime("%Y-%m-%d")
+        # YYYY-MM-DD 형식
+        date_match = re.match(r"^(\d{4}-\d{2}-\d{2})-", slug)
+        if date_match:
+            date = date_match.group(1)
+        else:
+            date = datetime.now().strftime("%Y-%m-%d")
 
-    # slug 추출
-    slug_match = re.search(r"/issues/([^/]+)/?$", url)
-    slug = slug_match.group(1) if slug_match else ""
+    # original_url은 GitHub 원문 URL로 구성
+    original_url = f"https://github.com/smol-ai/ainews-web-2025/blob/main/src/content/issues/{slug}.md"
 
     return {
         "date": date,
         "slug": slug,
-        "original_url": url,
+        "original_url": original_url,
     }
 
 
@@ -308,13 +194,13 @@ def validate_content(content: str, links: list[str], url: str) -> dict:
 
 
 def fetch_and_convert(url: str, output_path: Optional[Path] = None) -> dict:
-    """URL에서 페이지를 가져와 마크다운으로 변환합니다.
+    """URL에서 마크다운을 가져와 처리합니다.
 
     Returns:
         메타데이터와 콘텐츠를 포함한 딕셔너리
     """
-    html_content = fetch_page(url)
-    content, title, links = html_to_markdown(html_content)
+    raw_content = fetch_raw_markdown(url)
+    content, title, links = process_markdown(raw_content)
     url_metadata = extract_metadata_from_url(url)
 
     # 검증
@@ -343,11 +229,11 @@ def fetch_and_convert(url: str, output_path: Optional[Path] = None) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="smol.ai 뉴스 페이지를 크롤링하여 마크다운으로 변환합니다."
+        description="GitHub 마크다운 파일을 가져와 처리합니다."
     )
     parser.add_argument(
         "url",
-        help="크롤링할 smol.ai 뉴스 URL"
+        help="GitHub raw 마크다운 URL"
     )
     parser.add_argument(
         "-o", "--output",
@@ -393,8 +279,8 @@ def main():
             sys.exit(1)
 
     if not validation["valid"]:
-        print("WARNING: Content validation failed. Site structure may have changed.", file=sys.stderr)
-        sys.exit(2)  # 특별한 exit code로 구조 변경 감지
+        print("WARNING: Content validation failed.", file=sys.stderr)
+        sys.exit(2)  # 특별한 exit code로 검증 실패 표시
 
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-check_feed.py - RSS 피드 파서
-smol.ai 뉴스 RSS 피드를 확인하고 새 이슈를 감지합니다.
+check_feed.py - GitHub 소스 파서
+smol-ai/ainews-web-2025 GitHub 레포지토리에서 새 이슈를 감지합니다.
+
+기존 RSS 피드(news.smol.ai/rss.xml)가 더 이상 업데이트되지 않아
+GitHub 레포지토리의 마크다운 파일을 직접 확인하는 방식으로 변경되었습니다.
 """
 
 import sys
@@ -11,27 +14,28 @@ from datetime import datetime
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
-import xml.etree.ElementTree as ET
 import re
 
 # 프로젝트 루트 추가
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-RSS_FEED_URL = "https://news.smol.ai/rss.xml"
+GITHUB_API_URL = "https://api.github.com/repos/smol-ai/ainews-web-2025/contents/src/content/issues"
+GITHUB_RAW_BASE = "https://raw.githubusercontent.com/smol-ai/ainews-web-2025/main/src/content/issues"
 PROCESSED_FILE = PROJECT_ROOT / "data" / "processed.json"
 
 
-def fetch_rss_feed(url: str) -> str:
-    """RSS 피드를 가져옵니다."""
+def fetch_github_listing(url: str) -> list[dict]:
+    """GitHub API를 사용하여 이슈 파일 목록을 가져옵니다."""
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; smol-ai-news-automation/1.0)"
+        "User-Agent": "smol-ai-news-automation/1.0",
+        "Accept": "application/vnd.github.v3+json",
     }
     request = Request(url, headers=headers)
 
     try:
         with urlopen(request, timeout=30) as response:
-            return response.read().decode("utf-8")
+            return json.loads(response.read().decode("utf-8"))
     except HTTPError as e:
         print(f"HTTP Error: {e.code} - {e.reason}", file=sys.stderr)
         sys.exit(1)
@@ -40,52 +44,33 @@ def fetch_rss_feed(url: str) -> str:
         sys.exit(1)
 
 
-def parse_rss_feed(xml_content: str) -> list[dict]:
-    """RSS 피드를 파싱하여 이슈 목록을 반환합니다."""
-    root = ET.fromstring(xml_content)
+def parse_github_listing(files: list[dict]) -> list[dict]:
+    """GitHub 파일 목록을 파싱하여 이슈 목록을 반환합니다."""
     items = []
 
-    # RSS 2.0 구조: rss > channel > item
-    for item in root.findall(".//item"):
-        title = item.find("title")
-        link = item.find("link")
-        pub_date = item.find("pubDate")
-        description = item.find("description")
-        guid = item.find("guid")
-
-        if link is None:
+    for f in files:
+        name = f.get("name", "")
+        if not name.endswith(".md"):
             continue
 
-        url = link.text.strip()
-        slug = extract_slug_from_url(url)
+        slug = name[:-3]  # .md 제거
+
+        # YY-MM-DD 또는 YYYY-MM-DD 형식만 허용
+        if not re.match(r"^(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{2})", slug):
+            continue
+
+        raw_url = f"{GITHUB_RAW_BASE}/{name}"
 
         items.append({
-            "title": title.text.strip() if title is not None else "",
-            "url": url,
+            "title": slug,
+            "url": raw_url,
             "slug": slug,
-            "pub_date": pub_date.text.strip() if pub_date is not None else "",
-            "description": description.text.strip() if description is not None else "",
-            "guid": guid.text.strip() if guid is not None else url,
+            "pub_date": "",
+            "description": "",
+            "guid": slug,
         })
 
     return items
-
-
-def extract_slug_from_url(url: str) -> str:
-    """URL에서 slug를 추출합니다.
-
-    예: https://news.smol.ai/issues/26-01-16-chatgpt-ads/ -> 26-01-16-chatgpt-ads
-    """
-    # URL 끝의 슬래시 제거
-    url = url.rstrip("/")
-
-    # /issues/ 이후 부분 추출
-    match = re.search(r"/issues/([^/]+)", url)
-    if match:
-        return match.group(1)
-
-    # 마지막 경로 세그먼트 반환
-    return url.split("/")[-1]
 
 
 def load_processed_state() -> dict:
@@ -127,13 +112,21 @@ def mark_as_processed(slug: str, status: str = "success"):
 
 
 def extract_date_from_slug(slug: str) -> str:
-    """slug에서 날짜를 추출합니다.
+    """slug에서 날짜를 추출합니다. YYYY-MM-DD로 정규화하여 반환합니다.
 
-    예: 26-01-16-chatgpt-ads -> 26-01-16
+    예: 26-01-16-chatgpt-ads -> 2026-01-16
+        2026-02-10-qwenimage -> 2026-02-10
     """
-    match = re.match(r"^(\d{2}-\d{2}-\d{2})", slug)
+    # YYYY-MM-DD 형식 (새 형식)
+    match = re.match(r"^(\d{4}-\d{2}-\d{2})", slug)
     if match:
         return match.group(1)
+
+    # YY-MM-DD 형식 (구 형식) -> YYYY-MM-DD로 변환
+    match = re.match(r"^(\d{2})-(\d{2})-(\d{2})", slug)
+    if match:
+        return f"20{match.group(1)}-{match.group(2)}-{match.group(3)}"
+
     return ""
 
 
@@ -141,7 +134,7 @@ def get_latest_processed_date(state: dict) -> str:
     """처리된 이슈 중 가장 최신 날짜를 반환합니다.
 
     Returns:
-        가장 최신 날짜 (예: "26-01-16"), 없으면 빈 문자열
+        가장 최신 날짜 (예: "2026-01-16"), 없으면 빈 문자열
     """
     if not state.get("processed"):
         return ""
@@ -157,28 +150,7 @@ def get_latest_processed_date(state: dict) -> str:
     if not dates:
         return ""
 
-    # 날짜 정렬 (YY-MM-DD 형식이라 문자열 정렬로 충분)
     return sorted(dates, reverse=True)[0]
-
-
-def is_news_article(item: dict) -> bool:
-    """뉴스 기사인지 확인합니다.
-
-    /issues/ 경로의 YY-MM-DD 형식 slug만 뉴스 기사로 취급합니다.
-    /projects/ 등 다른 경로는 제외합니다.
-    """
-    url = item.get("url", "")
-    slug = item.get("slug", "")
-
-    # /issues/ 경로만 허용
-    if "/issues/" not in url:
-        return False
-
-    # YY-MM-DD 형식으로 시작하는 slug만 허용
-    if not re.match(r"^\d{2}-\d{2}-\d{2}", slug):
-        return False
-
-    return True
 
 
 def get_unprocessed_issues(items: list[dict]) -> list[dict]:
@@ -195,10 +167,6 @@ def get_unprocessed_issues(items: list[dict]) -> list[dict]:
 
     new_issues = []
     for item in items:
-        # 뉴스 기사만 처리 (/issues/ 경로, YY-MM-DD slug)
-        if not is_news_article(item):
-            continue
-
         # 이미 처리된 항목 제외
         if item["slug"] in processed_slugs:
             continue
@@ -211,13 +179,16 @@ def get_unprocessed_issues(items: list[dict]) -> list[dict]:
 
         new_issues.append(item)
 
+    # 날짜순 정렬 (오래된 것부터)
+    new_issues.sort(key=lambda x: extract_date_from_slug(x["slug"]))
+
     return new_issues
 
 
 def check_for_new_issues(limit: int = None) -> list[dict]:
     """새 이슈를 확인하고 반환합니다."""
-    xml_content = fetch_rss_feed(RSS_FEED_URL)
-    items = parse_rss_feed(xml_content)
+    files = fetch_github_listing(GITHUB_API_URL)
+    items = parse_github_listing(files)
     unprocessed = get_unprocessed_issues(items)
 
     # 상태 업데이트
@@ -232,7 +203,7 @@ def check_for_new_issues(limit: int = None) -> list[dict]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="smol.ai RSS 피드를 확인하고 새 이슈를 감지합니다."
+        description="GitHub 레포지토리에서 새 이슈를 감지합니다."
     )
     parser.add_argument(
         "--check",
@@ -242,7 +213,7 @@ def main():
     parser.add_argument(
         "--list-all",
         action="store_true",
-        help="모든 피드 항목 나열"
+        help="모든 이슈 파일 나열"
     )
     parser.add_argument(
         "--mark-processed",
@@ -276,8 +247,8 @@ def main():
         return
 
     if args.list_all:
-        xml_content = fetch_rss_feed(RSS_FEED_URL)
-        items = parse_rss_feed(xml_content)
+        files = fetch_github_listing(GITHUB_API_URL)
+        items = parse_github_listing(files)
 
         if args.json:
             print(json.dumps(items, indent=2, ensure_ascii=False))

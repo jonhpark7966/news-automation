@@ -176,10 +176,13 @@ def assemble_final_markdown(
     existing_fm, body = parse_frontmatter(translated_content)
 
     if existing_fm:
-        # 기존 frontmatter 사용, 필요한 필드 보완
+        # 기존 frontmatter 사용, metadata로 보완/덮어쓰기
         if metadata:
             for key, value in metadata.items():
-                if key not in existing_fm:
+                if key == "originalUrl":
+                    # originalUrl은 항상 파이프라인에서 전달된 값을 사용
+                    existing_fm[key] = value
+                elif key not in existing_fm:
                     existing_fm[key] = value
         fm_str = generate_frontmatter(existing_fm)
         return f"{fm_str}\n\n{body.strip()}\n"

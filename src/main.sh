@@ -116,7 +116,7 @@ fi
 
 # 새 이슈 확인 (URL이 지정되지 않은 경우)
 if [[ -z "$TARGET_URL" ]]; then
-    log_step "RSS 피드 확인"
+    log_step "GitHub 소스 확인"
 
     new_issue=$(python3 "$SCRIPT_DIR/rss/check_feed.py" --check --limit 1 --json)
 
@@ -140,8 +140,8 @@ if [[ "$CHECK_ONLY" == "true" ]]; then
     exit 0
 fi
 
-# URL에서 slug 추출
-SLUG=$(echo "$TARGET_URL" | sed -n 's|.*/issues/\([^/]*\)/\?$|\1|p')
+# URL에서 slug 추출 (GitHub raw URL 또는 smol.ai URL 모두 지원)
+SLUG=$(basename "$TARGET_URL" .md)
 if [[ -z "$SLUG" ]]; then
     SLUG=$(basename "$TARGET_URL")
 fi
@@ -269,9 +269,15 @@ fi
 log_step "Step 4: 최종 마크다운 생성"
 FINAL_FILE="$WORK_DIR/final.md"
 
+# GitHub raw URL을 blob URL로 변환 (원문보기 링크용)
+ORIGINAL_URL="$TARGET_URL"
+if [[ "$TARGET_URL" == *"raw.githubusercontent.com"* ]]; then
+    ORIGINAL_URL=$(echo "$TARGET_URL" | sed 's|raw.githubusercontent.com/\([^/]*/[^/]*\)/\([^/]*\)/|github.com/\1/blob/\2/|')
+fi
+
 python3 "$SCRIPT_DIR/generate/generate_markdown.py" "$TRANSLATED_FILE" \
     -o "$FINAL_FILE" \
-    --original-url "$TARGET_URL" || {
+    --original-url "$ORIGINAL_URL" || {
     log_error "Markdown generation failed"
     python3 "$SCRIPT_DIR/state/state_manager.py" mark "$SLUG" --status failed --error "Markdown generation failed"
     exit 1

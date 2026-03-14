@@ -132,9 +132,9 @@ $(echo "$SUMMARY" | while read line; do echo "- $line"; done)
 ${WARNINGS_SECTION}
 ## Pipeline Info
 
-- **Translation**: Codex CLI (gpt-5.2, reasoning: high)
+- **Translation**: Codex CLI ($CODEX_MODEL, reasoning: $CODEX_REASONING_EFFORT)
 - **Review**: Claude Opus
-- **Source**: [Original Article](https://news.smol.ai/issues/${SLUG}/)
+- **Source**: [Original Article](https://github.com/smol-ai/ainews-web-2025/blob/main/src/content/issues/${SLUG}.md)
 
 ## Checklist
 
