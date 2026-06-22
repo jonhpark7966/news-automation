@@ -129,7 +129,7 @@ def generate_youtube_description(
     # 푸터
     lines.append("─" * 40)
     lines.append("smol.ai 뉴스 자동 번역 시스템")
-    lines.append("Translated by Codex CLI (gpt-5.2)")
+    lines.append("Translated by Codex CLI (gpt-5.5)")
     lines.append("Reviewed by Claude Opus")
 
     return "\n".join(lines)

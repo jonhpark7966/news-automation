@@ -13,6 +13,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# nvm 로드 (cron 환경에서 node/codex PATH 확보)
+export NVM_DIR="$HOME/.nvm"
+[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+
 # 환경 설정 로드
 if [[ -f "$PROJECT_ROOT/config/config.env" ]]; then
     source "$PROJECT_ROOT/config/config.env"

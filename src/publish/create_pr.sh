@@ -89,7 +89,7 @@ feat(ainews): Add AI news - $SLUG
 
 $TITLE
 
-Co-Authored-By: Codex CLI (gpt-5.2) <noreply@openai.com>
+Co-Authored-By: Codex CLI (gpt-5.5) <noreply@openai.com>
 Reviewed-By: Claude Opus <noreply@anthropic.com>
 EOF
 )"

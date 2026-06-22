@@ -25,8 +25,8 @@ export GITHUB_SOURCE_REPO="smol-ai/ainews-web-2025"
 export GITHUB_ISSUES_PATH="src/content/issues"
 
 # 모델 설정
-export CODEX_MODEL="gpt-5.4"
-export CODEX_REASONING_EFFORT="medium"
+export CODEX_MODEL="gpt-5.5"
+export CODEX_REASONING_EFFORT="high"
 export CLAUDE_MODEL="opus"
 
 # CLI 경로
